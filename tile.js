@@ -2,15 +2,16 @@ let zoom = 7; // 0 - 18
 let center = [23.742197, 120.879237]; // 中心點座標（緯度,精度）
 let map = L.map('map').setView(center, zoom);
 
+// openstrremap
 const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 15,
-    minZoom: 5,
+    maxZoom: 13,
+    minZoom: 6,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',// 商用時必須要有版權出處
     zoomControl: true , // 是否秀出 - + 按鈕
 }).addTo(map);
 
 
-//顯示click經緯度位置
+// 'click'顯示經緯度位置
 let popup = L.popup();
 function onMapClick1(e) {
     popup
@@ -41,6 +42,20 @@ let overlay = [
     ]
 const Geology = L.layerGroup(overlay);
 
+//cwb震度圖
+let cwb = '/Int/CWB/2023020a.png';
+const cwb_st = [
+    [26.029563, 123.127030],
+    [20.867285, 118.726656]
+    ];
+
+let cwb_over = [
+    L.imageOverlay(cwb, cwb_st , {
+                    opacity : 0.4,
+                    interactive: true, //mouse event 可觸發
+                    }),
+    ]
+const cwb_int = L.layerGroup(cwb_over);
 
 //讀取測站資料
 let tmpData = [];
@@ -52,7 +67,7 @@ $.ajax({
     success: result => {
         // console.debug(result);
         let tmp = result.split("\n");
-            // console.debug(tmp);
+            // console.error(tmp);
             
             tmp.forEach(row => {
                 if (row != '') {
@@ -61,23 +76,19 @@ $.ajax({
                     //  "/  /"正則法
                     // console.log(col);
                     tmpData.push(col);
-                    // console.log(tmpData);
                     }});
     },
-    
     error: function (jqXHR, textStatus, errorThrown) {
         // console.error(jqXHR, textStatus, errorThrown);
         console.error(jqXHR, textStatus, errorThrown);
-
     },
 });
 //取所需資料,去掉開頭
-// console.log(tmpData[1][1]);
 let stations = [];
 for(var i = 1; i<tmpData.length;i++){
     stations.push(tmpData[i]);
 };
-// console.log(stations);
+
 
 
 //測站+樣式array
@@ -96,22 +107,34 @@ const Sta = L.layerGroup(markers);
 
 //地震事件
 const events = L.tileLayer('/events/{z}/{x}/{y}.png', {
-    maxZoom: 15,
-    minZoom: 5,
+    maxZoom: 13,
+    minZoom: 6,
     attribution: '2022-01-03~2023-04-09',
     zoomControl: true , // 是否秀出 - + 按鈕
     
 }).bringToFront(map);
 
+//
+const M4 = L.tileLayer('/M4_1990_2021/{z}/{x}/{y}.png', {
+    maxZoom: 12,
+    minZoom: 6,
+    attribution: 'M4_1990_2021',
+    zoomControl: true , // 是否秀出 - + 按鈕
+    
+}).bringToFront(map);
+
+
 
 //切換
 const changeLayer = {
-    "OpenStreetMap": osm,
+    "OpenStreetMap" : osm,
 };
 const overlayMaps = { 
-    "Event(2022-01-03~2023-04-09)":events,
-    "BATS_stalist":Sta,
-    "Geology":Geology,
+    "M4" : M4,
+    "Event(2022-01-03~2023-04-09)" : events,
+    "BATS_stalist" : Sta,
+    "Geology" : Geology,
+    "CWB_intensity" : cwb_int,
  };
 
 L.control.layers(changeLayer, overlayMaps).addTo(map);
